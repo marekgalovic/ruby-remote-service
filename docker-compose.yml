@@ -1,0 +1,8 @@
+rabbit_host_1:
+  image: harbur/rabbitmq-cluster
+  hostname: rabbit1
+  environment:
+    - ERLANG_COOKIE=rabbitcluster
+  ports:
+    - "5672:5672"
+    - "15672:15672"

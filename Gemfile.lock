@@ -1,0 +1,26 @@
+PATH
+  remote: .
+  specs:
+    remote_service (0.1.0)
+      bunny (~> 2.5)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    amq-protocol (2.0.1)
+    bunny (2.5.1)
+      amq-protocol (>= 2.0.1)
+    minitest (5.9.0)
+    rake (10.4.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bundler (~> 1.12)
+  minitest (~> 5.0)
+  rake (~> 10.0)
+  remote_service!
+
+BUNDLED WITH
+   1.12.5
