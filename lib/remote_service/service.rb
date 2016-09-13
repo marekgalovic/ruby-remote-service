@@ -8,6 +8,7 @@ module RemoteService
       result = method(payload['action'].to_sym).call(*payload['params'])
       Queue.instance.publish({result: result}, reply_to, correlation_id)
     rescue => e
+      RemoteService.logger.error(e)
       Queue.instance.publish(
         {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
         reply_to,

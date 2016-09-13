@@ -7,4 +7,4 @@ class ServiceA < RemoteService::Service
   end
 end
 
-ServiceA.start(brokers: ['localhost:5672'], workers: 16)
+ServiceA.start(brokers: ['localhost:5672'])

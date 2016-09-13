@@ -26,35 +26,37 @@ require "remote_service"
 
 class ServiceA < RemoteService::Service
   def all(count, keyword)
+    # exceptions raised here will raise in caller as well
     count
   end
 end
 
-ServiceA.start
+ServiceA.start(brokers: ['localhost:5672'])
 ```
 
 To call this service from remote machine, one need to define service proxy. Following script is an example of how can we execute remote call to the service defined above.
 ```ruby
 require "remote_service"
 
-RemoteService.start
+RemoteService.connect(brokers: ['localhost:5672'])
 
 class ServiceA < RemoteService::Proxy
 end
 
-#non-blocking call
-ServiceA.all(123, keyword: 'value') do |result|
+# non-blocking call
+ServiceA.all(123, keyword: 'value') do |result, error|
   puts result
 end
 sleep(0.1)
 
-#blocking call
+# blocking call
+# this will raise RemoteService::Errors::RemoteCallError if an error was raised in remote service
 puts ServiceA.all(123, keyword: 'value')
 ```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/remote_service. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/marekgalovic/ruby-remote-service. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 
 ## License

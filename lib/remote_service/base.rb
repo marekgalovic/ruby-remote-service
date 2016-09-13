@@ -7,6 +7,7 @@ module RemoteService
       end
 
       private
+
       def queue(name)
         @queue = name
       end

@@ -11,13 +11,17 @@ module RemoteService
   extend self
   attr_writer :logger
 
-  def start(*args)
+  def connect(*args)
     queue = Queue.instance
     queue.connect(*args)
     queue.start
   end
 
   def logger
-    @logger ||= Logger.new(STDOUT)
+    @logger ||= begin
+      logger = Logger.new(STDOUT)
+      logger.level = Logger::INFO
+      logger
+    end
   end
 end

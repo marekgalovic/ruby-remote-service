@@ -23,7 +23,8 @@ module RemoteService
     end
 
     def handle(payload, *)
-      RemoteService.logger.info "CALL ID:[#{id}] PARAMS:#{params} TIME: #{(Time.now.utc - @sent_at)*1000}ms"
+      response_time = (Time.now.utc - @sent_at)*1000
+      RemoteService.logger.debug("RPC_EXECUTION_TIME - CORRELATION_ID:[#{id}] TIME: #{response_time}ms")
       @callback.call(payload['result'], payload['error'])
     end
 
@@ -61,6 +62,7 @@ module RemoteService
     end
 
     def remote_error
+      RemoteService.logger.error("RPC_ERROR - CORRELATION_ID:[#{id}] ERROR:#{@error}")
       Errors::RemoteCallError.new(@error['name'], @error['message'], @error['backtrace'])
     end
   end
