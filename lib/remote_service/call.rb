@@ -6,30 +6,25 @@ module RemoteService
   class Call
     attr_reader :queue, :action, :params, :timeout
 
-    def initialize(queue, action, params, timeout: 10)
+    def initialize(queue, action, params, timeout:)
       @queue = queue
       @action = action
       @params = params
-      @timeout = timeout / 1000.0
-      @timestamp = Time.now.utc
+      @timeout = (timeout || 10) / 1000.0
     end
 
     def id
       @id ||= SecureRandom.uuid
     end
 
-    def response(&block)
+    def run(&block)
       return call_service_synchronously if !block_given?
       call_service(&block)
     end
 
-    def rpc_payload
-      {action: action, params: params}
-    end
-
     def handle(payload, *)
-      RemoteService.logger.info "CALL ID:[#{id}] PARAMS:#{params} TIME: #{(Time.now.utc - @timestamp)*1000}ms"
-      @callback.call(payload['result'])
+      RemoteService.logger.info "CALL ID:[#{id}] PARAMS:#{params} TIME: #{(Time.now.utc - @sent_at)*1000}ms"
+      @callback.call(payload['result'], payload['error'])
     end
 
     private
@@ -38,21 +33,20 @@ module RemoteService
 
     def call_service(&block)
       @callback = block
-      Queue.instance.publish(rpc_payload, queue, id, self)
+      @sent_at = Time.now.utc
+      Queue.instance.publish({action: action, params: params}, queue, id, self)
     end
 
     def call_service_synchronously
       lock
-      call_service do |response|
-        unlock(response)
+      call_service do |*params|
+        unlock(*params)
       end
       Timeout.timeout(timeout) {
         mutex.synchronize{condition.wait(mutex)}
+        raise remote_error if @error
         @response
       }
-    rescue Timeout::Error
-      Queue.instance.remove_handler(id)
-      raise
     end
 
     def lock
@@ -60,9 +54,14 @@ module RemoteService
       @condition = ConditionVariable.new
     end
 
-    def unlock(response)
+    def unlock(response, error)
       @response = response
+      @error = error
       mutex.synchronize{condition.signal}
+    end
+
+    def remote_error
+      Errors::RemoteCallError.new(@error['name'], @error['message'], @error['backtrace'])
     end
   end
 end

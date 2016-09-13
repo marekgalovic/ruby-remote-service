@@ -1,16 +1,17 @@
+require 'logger'
 require "bundler/setup"
 require "remote_service"
 
-RemoteService.start
+RemoteService.start(brokers: ['localhost:5672'], workers: 16)
+RemoteService.logger.level = Logger::ERROR
 
 class ServiceA < RemoteService::Proxy
+  timeout 100
 end
 
-#non-blocking call
-ServiceA.all(123, keyword: 'value') do |result|
-  puts result
+class ServiceB < RemoteService::Proxy
+  timeout 100
 end
-sleep(0.1)
 
-#blocking call
 puts ServiceA.all(123, keyword: 'value')
+puts ServiceB.users

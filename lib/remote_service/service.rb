@@ -7,13 +7,21 @@ module RemoteService
     def handle(payload, reply_to, correlation_id)
       result = method(payload['action'].to_sym).call(*payload['params'])
       Queue.instance.publish({result: result}, reply_to, correlation_id)
+    rescue => e
+      Queue.instance.publish(
+        {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
+        reply_to,
+        correlation_id
+      )
     end
 
     private
 
     class << self
-      def start
-        Queue.instance.start(self.instance)
+      def start(*args)
+        queue = Queue.instance
+        queue.connect(*args)
+        queue.start(self.instance)
       end
     end
   end

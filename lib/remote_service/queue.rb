@@ -1,6 +1,6 @@
-require 'singleton'
-require 'json'
 require 'securerandom'
+require 'singleton'
+require 'msgpack'
 require 'bunny'
 
 module RemoteService
@@ -8,16 +8,24 @@ module RemoteService
     include Singleton
 
     def initialize
-      @conn = Bunny.new(host: "localhost", port: 5672)
       @handlers = {}
+    end
+
+    def connect(brokers:, workers:16)
+      @conn = Bunny.new(host: brokers.first)
+      @workers = workers
     end
 
     def start(service=nil)
       @conn.start
       @service = service
-      queue_subscriber.subscribe(block: should_block?) do |delivery_info, properties, payload|
-        handler(properties.correlation_id).handle(decode(payload), properties.reply_to, properties.correlation_id)
+      queue_subscriber.subscribe(block: service?) do |delivery_info, properties, payload|
+        pop_handler(properties.correlation_id).handle(decode(payload), properties.reply_to, properties.correlation_id)
       end
+    end
+
+    def stop
+      @conn.stop
     end
 
     def publish(payload, queue, correlation_id, handler=nil)
@@ -30,13 +38,9 @@ module RemoteService
       )
     end
 
-    def remove_handler(correlation_id)
-      @handlers.delete(correlation_id)
-    end
-
     private
     def channel
-      @channel ||= @conn.create_channel
+      @channel ||= @conn.create_channel(nil, @workers)
     end
 
     def exchange
@@ -47,7 +51,7 @@ module RemoteService
       @queue_subscriber ||= channel.queue(queue_name)
     end
 
-    def should_block?
+    def service?
       @service != nil
     end
 
@@ -55,9 +59,11 @@ module RemoteService
       @handlers[correlation_id] = handler
     end
 
-    def handler(correlation_id)
+    def pop_handler(correlation_id)
       return @service if @service
       @handlers[correlation_id]
+    ensure
+      @handlers.delete(correlation_id)
     end
 
     def queue_name
@@ -66,11 +72,11 @@ module RemoteService
     end
 
     def encode(payload)
-      JSON.generate(payload)
+      MessagePack.pack(payload)
     end
 
     def decode(payload)
-      JSON.parse(payload)
+      MessagePack.unpack(payload)
     end
   end
 end
