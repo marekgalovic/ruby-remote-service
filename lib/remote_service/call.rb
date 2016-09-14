@@ -26,31 +26,20 @@ module RemoteService
     end
 
     def call_service_synchronously
-      lock
+      lock = Util::Lock.new
       call_service do |response, error|
-        unlock(response, error)
+        lock.unlock(response, error)
       end
       Timeout.timeout(timeout) {
-        @mutex.synchronize{ @condition.wait(@mutex) }
-        raise remote_error if @error
-        @response
+        response, error = lock.wait
+        raise remote_error(error) if error
+        response
       }
     end
 
-    def lock
-      @mutex = Mutex.new
-      @condition = ConditionVariable.new
-    end
-
-    def unlock(response, error)
-      @response = response
-      @error = error
-      @mutex.synchronize{@condition.signal}
-    end
-
-    def remote_error
-      RemoteService.logger.error("RPC_ERROR - SERVICE:[#{queue}] ACTION:[#{action}] ERROR:#{@error}")
-      Errors::RemoteCallError.new(@error['name'], @error['message'], @error['backtrace'])
+    def remote_error(error)
+      RemoteService.logger.error("RPC_ERROR - SERVICE:[#{queue}] ACTION:[#{action}] ERROR:#{error}")
+      Errors::RemoteCallError.new(error['name'], error['message'], error['backtrace'])
     end
   end
 end

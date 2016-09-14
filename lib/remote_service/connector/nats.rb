@@ -10,7 +10,11 @@ module RemoteService
       end
 
       def start
-        connection_thread
+        lock = Util::Lock.new
+        connection_thread do |connection|
+          lock.unlock(connection)
+        end
+        lock.wait
       end
 
       def stop
@@ -52,16 +56,10 @@ module RemoteService
       end
 
       def connection_thread
-        @connection_thread ||= begin
-          mutex = Mutex.new
-          condition = ConditionVariable.new
-          conn_thread = Thread.new do
-            connect do
-              mutex.synchronize{condition.signal}
-            end
+        Thread.new do
+          connect do |connection|
+            yield(connection)
           end
-          mutex.synchronize{condition.wait(mutex)}
-          conn_thread
         end
       end
     end

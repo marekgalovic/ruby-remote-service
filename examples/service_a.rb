@@ -3,7 +3,6 @@ require "remote_service"
 
 class ServiceA < RemoteService::Service
   def all(count, keyword)
-    sleep(0.1)
     count
   end
 end

@@ -1,29 +1,7 @@
-rabbit_host_1:
-  image: harbur/rabbitmq-cluster
-  hostname: rabbit1
-  environment:
-    - ERLANG_COOKIE=rabbitcluster
+nats_node_1:
+  image: nats
+  hostname: nats1
   ports:
-    - "5672:5672"
-    - "15672:15672"
-rabbit_host_2:
-  image: harbur/rabbitmq-cluster
-  hostname: rabbit2
-  links:
-    - rabbit_host_1
-  environment:
-    - ERLANG_COOKIE=rabbitcluster
-    - CLUSTER_WITH=rabbit1
-  ports:
-    - "5673:5672"
-rabbit_host_3:
-  image: harbur/rabbitmq-cluster
-  hostname: rabbit3
-  links:
-    - rabbit_host_1
-    - rabbit_host_2
-  environment:
-    - ERLANG_COOKIE=rabbitcluster
-    - CLUSTER_WITH=rabbit1
-  ports:
-    - "5674:5672"
+    - "4222:4222"
+    - "6222:6222"
+    - "8222:8222"
