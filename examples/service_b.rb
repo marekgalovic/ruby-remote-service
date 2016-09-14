@@ -8,5 +8,5 @@ class ServiceB < RemoteService::Service
   end
 end
 
-RemoteService.logger.level = Logger::DEBUG
-ServiceB.start(brokers: ['localhost:5672'], workers: 20)
+RemoteService.logger.level = Logger::ERROR
+ServiceA.start(brokers: ['nats://127.0.0.1:4222'])

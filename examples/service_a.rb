@@ -3,8 +3,10 @@ require "remote_service"
 
 class ServiceA < RemoteService::Service
   def all(count, keyword)
+    sleep(0.1)
     count
   end
 end
 
-ServiceA.start(brokers: ['localhost:5672'])
+RemoteService.logger.level = Logger::DEBUG
+ServiceA.start(brokers: ['nats://127.0.0.1:4222'])

@@ -4,25 +4,24 @@ module RemoteService
   class Service < Base
     include Singleton
 
-    def handle(payload, reply_to, correlation_id)
+    def handle(payload, reply_to)
       result = method(payload['action'].to_sym).call(*payload['params'])
-      Queue.instance.publish({result: result}, reply_to, correlation_id)
+      RemoteService.logger.debug "RESULT - REPLY_TO:[#{reply_to}] PARAMS:[#{payload}] RESULT:[#{result}]"
+      Queue.instance.publish(reply_to, {result: result})
     rescue => e
       RemoteService.logger.error(e)
       Queue.instance.publish(
-        {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
         reply_to,
-        correlation_id
+        {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
       )
     end
 
     private
 
     class << self
-      def start(*args)
+      def start(brokers, workers=16)
         queue = Queue.instance
-        queue.connect(*args)
-        queue.start(self.instance)
+        queue.connect(brokers, self.instance, workers: workers)
       end
     end
   end

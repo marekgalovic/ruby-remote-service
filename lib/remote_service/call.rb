@@ -1,6 +1,5 @@
 require 'securerandom'
 require 'timeout'
-require 'json'
 
 module RemoteService
   class Call
@@ -13,38 +12,26 @@ module RemoteService
       @timeout = (timeout || 10) / 1000.0
     end
 
-    def id
-      @id ||= SecureRandom.uuid
-    end
-
     def run(&block)
       return call_service_synchronously if !block_given?
       call_service(&block)
     end
 
-    def handle(payload, *)
-      response_time = (Time.now.utc - @sent_at)*1000
-      RemoteService.logger.debug("RPC_EXECUTION_TIME - CORRELATION_ID:[#{id}] TIME: #{response_time}ms")
-      @callback.call(payload['result'], payload['error'])
-    end
-
     private
 
-    attr_reader :mutex, :condition
-
-    def call_service(&block)
-      @callback = block
-      @sent_at = Time.now.utc
-      Queue.instance.publish({action: action, params: params}, queue, id, self)
+    def call_service
+      Queue.instance.request(queue, {action: action, params: params}) do |response|
+        yield(response['result'], response['error'])
+      end
     end
 
     def call_service_synchronously
       lock
-      call_service do |*params|
-        unlock(*params)
+      call_service do |response, error|
+        unlock(response, error)
       end
       Timeout.timeout(timeout) {
-        mutex.synchronize{condition.wait(mutex)}
+        @mutex.synchronize{ @condition.wait(@mutex) }
         raise remote_error if @error
         @response
       }
@@ -58,11 +45,11 @@ module RemoteService
     def unlock(response, error)
       @response = response
       @error = error
-      mutex.synchronize{condition.signal}
+      @mutex.synchronize{@condition.signal}
     end
 
     def remote_error
-      RemoteService.logger.error("RPC_ERROR - CORRELATION_ID:[#{id}] ERROR:#{@error}")
+      RemoteService.logger.error("RPC_ERROR - SERVICE:[#{queue}] ACTION:[#{action}] ERROR:#{@error}")
       Errors::RemoteCallError.new(@error['name'], @error['message'], @error['backtrace'])
     end
   end

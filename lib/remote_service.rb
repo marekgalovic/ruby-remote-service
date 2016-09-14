@@ -1,5 +1,6 @@
 require "remote_service/version"
 require "remote_service/errors"
+require "remote_service/connector/nats"
 require "remote_service/queue"
 require "remote_service/call"
 require "remote_service/base"
@@ -11,10 +12,9 @@ module RemoteService
   extend self
   attr_writer :logger
 
-  def connect(*args)
+  def connect(brokers)
     queue = Queue.instance
-    queue.connect(*args)
-    queue.start
+    queue.connect(brokers)
   end
 
   def logger
