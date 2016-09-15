@@ -59,6 +59,9 @@ sleep(0.1) # wait for non-blocking call to execute
 puts ServiceA.all(123, keyword: 'value')
 ```
 
+# Todo
+Service worker threads
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/marekgalovic/ruby-remote-service. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
