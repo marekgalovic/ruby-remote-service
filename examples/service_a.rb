@@ -3,6 +3,7 @@ require "remote_service"
 
 class ServiceA < RemoteService::Service
   def all(count, keyword:)
+    raise StandardError
     keyword
   end
 end

@@ -7,6 +7,7 @@ module RemoteService
 
       def initialize(brokers:)
         @brokers = brokers
+        @mutex = Mutex.new
       end
 
       def start(&block)
@@ -19,11 +20,15 @@ module RemoteService
       end
 
       def publish(to_queue, message)
-        NATS.publish(to_queue, message)
+        @mutex.synchronize do
+          NATS.publish(to_queue, message)
+        end
       end
 
       def request(to_queue, message, &block)
-        NATS.request(to_queue, message, &block)
+        @mutex.synchronize do
+          NATS.request(to_queue, message, &block)
+        end
       end
 
       def subscribe(service_queue, &block)

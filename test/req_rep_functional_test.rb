@@ -20,22 +20,16 @@ class ReqRepFunctionalTest < Minitest::Test
   end
 
   def setup
-    Thread.new do
+    @conn = Thread.new do
       Service::ServiceA.start(brokers: ['nats://127.0.0.1:4222'])
     end
   end
 
-  def test_remote_method_is_called_through_local_proxy
+  def test_remote_method_is_called_through_local_proxy_and_raises_remote_errors
     RemoteService.connect(brokers: ['nats://127.0.0.1:4222'])
     sleep(0.1) #wait for service's eventmachine to start (improves stability, needed only in test)
 
     assert_equal 123, Proxy::ServiceA.all(123)
-  end
-
-  def test_remote_method_is_called_through_local_proxy
-    RemoteService.connect(brokers: ['nats://127.0.0.1:4222'])
-    sleep(0.1) #wait for service's eventmachine to start (improves stability, needed only in test)
-
     assert_raises ::RemoteService::Errors::RemoteCallError do
       Proxy::ServiceA.method_that_raises
     end
