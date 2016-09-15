@@ -10,7 +10,8 @@ class QueueTest < Minitest::Test
   def test_connect_initializes_nats_connection
     NATS.expects(:start).with(servers: ['nats://127.0.0.1:4222']).once
 
-    ::RemoteService::Queue.instance.connect(brokers: ['nats://127.0.0.1:4222']) do
+    ::RemoteService::Queue.instance.connect(['nats://127.0.0.1:4222']) do
+      EM.stop
     end
   end
 end

@@ -25,10 +25,10 @@ module RemoteService
     end
 
     class << self
-      def start(brokers, workers=16)
+      def start(brokers:nil, workers:nil, monitor_interval:nil)
         queue = Queue.instance
         queue.connect(brokers) do
-          queue.service(self.instance, workers)
+          queue.service(self.instance, workers, monitor_interval)
         end
       end
     end

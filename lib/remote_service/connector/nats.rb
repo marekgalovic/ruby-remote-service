@@ -5,7 +5,7 @@ module RemoteService
     class Nats
       attr_reader :brokers
 
-      def initialize(brokers:)
+      def initialize(brokers)
         @brokers = brokers
         @mutex = Mutex.new
       end
@@ -15,8 +15,8 @@ module RemoteService
         connect(&block)
       end
 
-      def stop
-        NATS.stop
+      def exit
+        @conn_thread.exit
       end
 
       def publish(to_queue, message)
@@ -55,7 +55,7 @@ module RemoteService
 
       def connection_thread
         lock = Util::Lock.new
-        Thread.new do
+        @conn_thread = Thread.new do
           connect do |connection|
             lock.unlock(connection)
           end

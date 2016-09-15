@@ -1,4 +1,4 @@
-# RemoteService ![img](https://travis-ci.com/marekgalovic/ruby-remote-service.svg?token=tzyPCMPPikt2LiEzxR71&branch=master) [![Gem Version](https://badge.fury.io/rb/remote_service.svg)](https://badge.fury.io/rb/remote_service)
+# RemoteService ![img](https://travis-ci.com/marekgalovic/ruby-remote-service.svg?token=tzyPCMPPikt2LiEzxR71&branch=master) [![Code Climate](https://codeclimate.com/github/marekgalovic/ruby-remote-service/badges/gpa.svg)](https://codeclimate.com/github/marekgalovic/ruby-remote-service) [![Gem Version](https://badge.fury.io/rb/remote_service.svg)](https://badge.fury.io/rb/remote_service)
 Remote services made easy. This gem is basically RPC client/server implemented on top of awesome [NATS](http://nats.io/) project. Every service you want to use is exposed through class that extends `RemoteService::Proxy`. Service itself extends `RemoteService::Service` and should define all methods that you want to call from clients.
 
 ## Installation

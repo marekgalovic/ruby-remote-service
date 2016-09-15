@@ -6,14 +6,19 @@ module RemoteService
   class Queue
     include Singleton
 
+    EXIT_SIGNALS = ['INT', 'TERM', 'SIGQUIT']
+
     def connect(brokers, &block)
-      @conn = RemoteService::Connector::Nats.new(brokers)
+      brokers ||= ENV.fetch('REMOTE_SERVICE_BROKERS', 'nats://127.0.0.1:4222').split(',')
+      @conn = Connector::Nats.new(brokers)
       @conn.start(&block)
     end
 
-    def service(service_handler, workers=16)
+    def service(service_handler, workers, monitor_interval)
+      workers ||= ENV.fetch('REMOTE_SERVICE_WORKERS', 4)
+      monitor_interval ||= ENV.fetch('REMOTE_SERVICE_MONITOR_INTERVAL', 5)
+      @worker_pool = WorkerPool.new(workers.to_i, monitor_interval.to_i)
       @service_handler = service_handler
-      @workers = workers
       start_service_subscriber
     end
 
@@ -40,17 +45,20 @@ module RemoteService
 
     def start_service_subscriber
       RemoteService.logger.debug "SERVICE QUEUE: #{service_queue_name}"
-      @conn.subscribe(service_queue_name) do |request, reply_to|
-        begin
-          payload = decode(request)
-          RemoteService.logger.debug "FETCHED - REPLY_TO:[#{reply_to}] PAYLOAD:[#{payload}]"
-          @service_handler.handle(payload, reply_to)
-        rescue => e
-          RemoteService.logger.error(e)
-          Queue.instance.publish(
-            reply_to,
-            {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
-          )
+      @worker_pool.start
+      @conn.subscribe(service_queue_name) do |*args|
+        @worker_pool.run(*args) do |request, reply_to|
+          begin
+            payload = decode(request)
+            RemoteService.logger.debug "FETCHED - REPLY_TO:[#{reply_to}] PAYLOAD:[#{payload}]"
+            @service_handler.handle(payload, reply_to)
+          rescue => e
+            RemoteService.logger.error(e)
+            Queue.instance.publish(
+              reply_to,
+              {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
+            )
+          end
         end
       end
     end
@@ -69,6 +77,16 @@ module RemoteService
 
     def decode(payload)
       MessagePack.unpack(payload)
+    end
+
+    def setup_signal_handlers
+      EXIT_SIGNALS.each do |sig|
+        trap(sig) do
+          @worker_pool.exit if service?
+          @conn.exit if !service?
+          EM.stop
+        end
+      end
     end
   end
 end

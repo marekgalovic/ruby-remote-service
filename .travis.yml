@@ -12,3 +12,7 @@ before_install:
 
 script:
   - bundle exec rake test
+
+addons:
+  code_climate:
+    repo_token: 683ec4c66a12e8212b328523e894dd74064f340847357fb208b5bc5a9fb7e31e

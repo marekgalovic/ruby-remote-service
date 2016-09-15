@@ -3,3 +3,5 @@ require 'remote_service'
 
 require 'minitest/autorun'
 require 'mocha/mini_test'
+
+RemoteService.logger.level = Logger::FATAL

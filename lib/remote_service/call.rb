@@ -17,7 +17,7 @@ module RemoteService
     private
 
     def call_service
-      RemoteService::Queue.instance.request(queue, {action: action, params: params}) do |response|
+      Queue.instance.request(queue, {action: action, params: params}) do |response|
         yield(response['result'], response['error'])
       end
     end

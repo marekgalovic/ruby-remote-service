@@ -2,7 +2,7 @@ require 'test_helper'
 
 class ReqRepFunctionalTest < Minitest::Test
   module Service
-    class ServiceA < ::RemoteService::Service
+    class Users < ::RemoteService::Service
       def all(count)
         count
       end
@@ -14,14 +14,14 @@ class ReqRepFunctionalTest < Minitest::Test
   end
 
   module Proxy
-    class ServiceA < ::RemoteService::Proxy
+    class Users < ::RemoteService::Proxy
       timeout 10
     end
   end
 
   def setup
     @conn = Thread.new do
-      Service::ServiceA.start(brokers: ['nats://127.0.0.1:4222'])
+      Service::Users.start(brokers: ['nats://127.0.0.1:4222'])
     end
   end
 
@@ -29,9 +29,9 @@ class ReqRepFunctionalTest < Minitest::Test
     RemoteService.connect(brokers: ['nats://127.0.0.1:4222'])
     sleep(0.1) #wait for service's eventmachine to start (improves stability, needed only in test)
 
-    assert_equal 123, Proxy::ServiceA.all(123)
+    assert_equal 123, Proxy::Users.all(123)
     assert_raises ::RemoteService::Errors::RemoteCallError do
-      Proxy::ServiceA.method_that_raises
+      Proxy::Users.method_that_raises
     end
   end
 end
