@@ -37,10 +37,6 @@ module RemoteService
       @conn.publish(queue, encode(payload))
     end
 
-    def stop
-      @conn.stop
-    end
-
     private
 
     def start_service_subscriber
