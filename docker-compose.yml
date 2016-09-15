@@ -4,7 +4,7 @@ services:
   nats_node_1:
     image: nats:0.9.4
     hostname: nats1
-    entrypoint: '/gnatsd -p 4222 -cluster nats://0.0.0.0:4248 -D -m 8888'
+    entrypoint: '/gnatsd -p 4222 -m 8888 -cluster nats://0.0.0.0:4248 -D'
     ports:
       - "4222:4222"
       - "8888:8888"

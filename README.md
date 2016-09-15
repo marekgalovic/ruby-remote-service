@@ -1,4 +1,4 @@
-# RemoteService
+# RemoteService ![img](https://travis-ci.com/marekgalovic/ruby-remote-service.svg?token=tzyPCMPPikt2LiEzxR71&branch=master)
 
 Remote services made easy.
 
