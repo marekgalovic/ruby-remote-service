@@ -16,8 +16,6 @@ module RemoteService
 
       def stop
         NATS.stop
-        stop_subscriber
-        connection_thread.exit
       end
 
       def publish(to_queue, message)
