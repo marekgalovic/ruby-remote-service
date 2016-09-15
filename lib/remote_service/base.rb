@@ -1,9 +1,9 @@
 module RemoteService
   class Base
-
     class << self
+
       def queue_name
-        "services.#{@queue || default_queue_name}"
+        "services.#{@queue ||= default_queue_name}"
       end
 
       private

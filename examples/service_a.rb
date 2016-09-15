@@ -2,10 +2,9 @@ require "bundler/setup"
 require "remote_service"
 
 class ServiceA < RemoteService::Service
-  def all(count, keyword)
-    count
+  def all(count, keyword:)
+    keyword
   end
 end
 
-RemoteService.logger.level = Logger::DEBUG
 ServiceA.start(brokers: ['nats://127.0.0.1:5222'])

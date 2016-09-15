@@ -18,6 +18,10 @@ module RemoteService
     queue.connect(brokers, &block)
   end
 
+  def disconnect
+    Queue.instance.stop
+  end
+
   def logger
     @logger ||= begin
       logger = Logger.new(STDOUT)
