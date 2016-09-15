@@ -1,6 +1,5 @@
-# RemoteService ![img](https://travis-ci.com/marekgalovic/ruby-remote-service.svg?token=tzyPCMPPikt2LiEzxR71&branch=master)
-
-Remote services made easy.
+# RemoteService ![img](https://travis-ci.com/marekgalovic/ruby-remote-service.svg?token=tzyPCMPPikt2LiEzxR71&branch=master) [![Gem Version](https://badge.fury.io/rb/remote_service.svg)](https://badge.fury.io/rb/remote_service)
+Remote services made easy. This gem is basically RPC client/server implemented on top of awesome [NATS](http://nats.io/) project. Every service you want to use is exposed through class that extends `RemoteService::Proxy`. Service itself extends `RemoteService::Service` and should define all methods that you want to call from clients.
 
 ## Installation
 
@@ -19,35 +18,41 @@ Or install it yourself as:
     $ gem install remote_service
 
 ## Usage
+First you need to start NATS cluster. This can be either single broker or n-node cluster. I've made easy for you to play with this gem, so all you need to do is install `Docker` and `Docker compose` (if you haven't yet) and run following command.
+```
+docker-compose up
+```
 
-First you need to define and run your service. Minimal service can be run with a following script. Return value of each action will be sent back as a response.
+Then you need to define and run your service. Minimal service can be run with a following script where return value of each method will be sent back as a response.
 ```ruby
 require "remote_service"
 
 class ServiceA < RemoteService::Service
   def all(count, keyword)
-    # exceptions raised here will raise in caller as well
+    # exceptions raised here will raise RemoteService::Errors::RemoteCallError exception in client
     count
   end
 end
 
-ServiceA.start(brokers: ['localhost:5672'])
+# NATS uses autodiscovery, so third broker will be added automatically
+ServiceA.start(brokers: ['nats://127.0.0.1:4222', 'nats://127.0.0.1:5222'])
 ```
 
-To call this service from remote machine, one need to define service proxy. Following script is an example of how can we execute remote call to the service defined above.
+Last thing is to call the service defined previously. All you need to do is define a service proxy, connect to NATS cluster and call a remote method as if it was local. 
 ```ruby
 require "remote_service"
 
-RemoteService.connect(brokers: ['localhost:5672'])
+RemoteService.connect(brokers: ['nats://127.0.0.1:4222', 'nats://127.0.0.1:6222'])
 
 class ServiceA < RemoteService::Proxy
+  timeout 100 # optional, default value is 10ms
 end
 
 # non-blocking call
 ServiceA.all(123, keyword: 'value') do |result, error|
   puts result
 end
-sleep(0.1)
+sleep(0.1) # wait for non-blocking call to execute
 
 # blocking call
 # this will raise RemoteService::Errors::RemoteCallError if an error was raised in remote service
