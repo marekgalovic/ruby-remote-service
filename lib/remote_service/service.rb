@@ -6,14 +6,8 @@ module RemoteService
 
     def handle(payload, reply_to)
       result = method(payload['action'].to_sym).call(*payload['params'])
-      RemoteService.logger.debug "RESULT - REPLY_TO:[#{reply_to}] PARAMS:[#{payload}] RESULT:[#{result}]"
+      RemoteService.logger.debug "RESULT - ACTION:[#{payload['action']}] REPLY_TO:[#{reply_to}] PARAMS:[#{payload['params']}] RESULT:[#{result}]"
       Queue.instance.publish(reply_to, {result: result})
-    rescue => e
-      RemoteService.logger.error(e)
-      Queue.instance.publish(
-        reply_to,
-        {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
-      )
     end
 
     private
@@ -21,7 +15,9 @@ module RemoteService
     class << self
       def start(brokers, workers=16)
         queue = Queue.instance
-        queue.connect(brokers, self.instance, workers: workers)
+        queue.connect(brokers) do
+          queue.service(self.instance, workers)
+        end
       end
     end
   end

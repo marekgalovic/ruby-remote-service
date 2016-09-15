@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+  nats_node_1:
+    image: nats:0.9.4
+    hostname: nats1
+    entrypoint: '/gnatsd -p 4222 -cluster nats://0.0.0.0:4248 -D -m 8888'
+    ports:
+      - "4222:4222"
+      - "8888:8888"
+
+  nats_node_2:
+    image: nats:0.9.4
+    hostname: nats2
+    entrypoint: '/gnatsd -p 5222 -cluster nats://0.0.0.0:5248 -routes nats://nats1:4248 -D'
+    links:
+      - nats_node_1:nats1
+    ports:
+      - "5222:5222"
+
+  nats_node_3:
+    image: nats:0.9.4
+    hostname: nats3
+    entrypoint: '/gnatsd -p 6222 -cluster nats://0.0.0.0:6248 -routes nats://nats1:4248 -D'
+    links:
+      - nats_node_1:nats1
+    ports:
+      - "6222:6222"

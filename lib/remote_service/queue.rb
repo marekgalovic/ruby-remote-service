@@ -6,16 +6,15 @@ module RemoteService
   class Queue
     include Singleton
 
-    def initialize
-      # at_exit { stop }
+    def connect(brokers, &block)
+      @conn = RemoteService::Connector::Nats.new(brokers)
+      @conn.start(&block)
     end
 
-    def connect(brokers, service_handler=nil, workers=16)
-      @conn = RemoteService::Connector::Nats.new(brokers)
+    def service(service_handler, workers=16)
       @service_handler = service_handler
       @workers = workers
-      return service_subscriber if service?
-      @conn.start
+      start_service_subscriber
     end
 
     def request(queue, payload)
@@ -39,11 +38,20 @@ module RemoteService
 
     private
 
-    def service_subscriber
+    def start_service_subscriber
+      RemoteService.logger.debug "SERVICE QUEUE: #{service_queue_name}"
       @conn.subscribe(service_queue_name) do |request, reply_to|
-        payload = decode(request)
-        RemoteService.logger.debug "FETCHED - REPLY_TO:[#{reply_to}] PAYLOAD:[#{payload}]"
-        @service_handler.handle(payload, reply_to)
+        begin
+          payload = decode(request)
+          RemoteService.logger.debug "FETCHED - REPLY_TO:[#{reply_to}] PAYLOAD:[#{payload}]"
+          @service_handler.handle(payload, reply_to)
+        rescue => e
+          RemoteService.logger.error(e)
+          Queue.instance.publish(
+            reply_to,
+            {result: nil, error: {name: e.class.name, message: e.message, backtrace: e.backtrace}},
+          )
+        end
       end
     end
 
@@ -53,10 +61,6 @@ module RemoteService
 
     def service_queue_name
       @service_handler.class.queue_name if @service_handler
-    end
-
-    def log_message(action, queue, reply_to, payload)
-      "#{action.to_s.upcase} - QUEUE:[#{queue}] REPLY_TO:[#{reply_to}] PAYLOAD:[#{payload}]"
     end
 
     def encode(payload)

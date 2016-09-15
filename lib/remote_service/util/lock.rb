@@ -1,9 +1,12 @@
+require 'timeout'
+
 module RemoteService
   module Util
     class Lock
-      def initialize
+      def initialize(timeout=0)
         @mutex = Mutex.new
         @condition = ConditionVariable.new
+        @timeout = timeout
       end
 
       def unlock(*return_value)
@@ -12,8 +15,10 @@ module RemoteService
       end
 
       def wait
-        @mutex.synchronize{ @condition.wait(@mutex) }
-        @return_value
+        Timeout.timeout(@timeout) do
+          @mutex.synchronize{ @condition.wait(@mutex) }
+          @return_value
+        end
       end
     end
   end

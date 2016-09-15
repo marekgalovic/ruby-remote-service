@@ -1,6 +1,3 @@
-require 'securerandom'
-require 'timeout'
-
 module RemoteService
   class Call
     attr_reader :queue, :action, :params, :timeout
@@ -26,15 +23,13 @@ module RemoteService
     end
 
     def call_service_synchronously
-      lock = Util::Lock.new
+      lock = Util::Lock.new(timeout)
       call_service do |response, error|
         lock.unlock(response, error)
       end
-      Timeout.timeout(timeout) {
-        response, error = lock.wait
-        raise remote_error(error) if error
-        response
-      }
+      response, error = lock.wait
+      raise remote_error(error) if error
+      response
     end
 
     def remote_error(error)

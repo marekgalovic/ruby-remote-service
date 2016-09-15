@@ -13,9 +13,9 @@ module RemoteService
   extend self
   attr_writer :logger
 
-  def connect(brokers)
+  def connect(brokers, &block)
     queue = Queue.instance
-    queue.connect(brokers)
+    queue.connect(brokers, &block)
   end
 
   def logger

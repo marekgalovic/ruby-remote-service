@@ -5,16 +5,13 @@ module RemoteService
     class Nats
       attr_reader :brokers
 
-      def initialize(brokers)
+      def initialize(brokers:)
         @brokers = brokers
       end
 
-      def start
-        lock = Util::Lock.new
-        connection_thread do |connection|
-          lock.unlock(connection)
-        end
-        lock.wait
+      def start(&block)
+        return connection_thread if !block_given?
+        connect(&block)
       end
 
       def stop
@@ -32,10 +29,7 @@ module RemoteService
       end
 
       def subscribe(service_queue, &block)
-        connect do
-          RemoteService.logger.debug "SERVICE QUEUE: #{service_queue}"
-          NATS.subscribe(service_queue, queue: service_queue, &block)
-        end
+        NATS.subscribe(service_queue, queue: service_queue, &block)
       end
 
       private
@@ -43,8 +37,9 @@ module RemoteService
       attr_reader :connection
 
       def connect
-        NATS.start(brokers: @brokers) do |connection|
+        NATS.start(servers: @brokers) do |connection|
           RemoteService.logger.info "CONNECTED: #{connection.connected_server}"
+          RemoteService.logger.info "SERVERS IN POOL: #{connection.server_pool.count}"
           connection.on_reconnect do
             RemoteService.logger.info "RECONNECT, NEW_NODE: #{connection.connected_server}"
           end
@@ -56,11 +51,13 @@ module RemoteService
       end
 
       def connection_thread
+        lock = Util::Lock.new
         Thread.new do
           connect do |connection|
-            yield(connection)
+            lock.unlock(connection)
           end
         end
+        lock.wait
       end
     end
   end

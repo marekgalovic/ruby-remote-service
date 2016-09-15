@@ -8,4 +8,4 @@ class ServiceA < RemoteService::Service
 end
 
 RemoteService.logger.level = Logger::DEBUG
-ServiceA.start(brokers: ['nats://127.0.0.1:4222'])
+ServiceA.start(brokers: ['nats://127.0.0.1:5222'])
