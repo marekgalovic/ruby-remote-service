@@ -59,8 +59,8 @@ sleep(0.1) # wait for non-blocking call to execute
 puts ServiceA.all(123, keyword: 'value')
 ```
 
-# Todo
-Service worker threads
+## Todo
+Add full support for NATS configuration options.
 
 ## Contributing
 

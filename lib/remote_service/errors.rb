@@ -1,5 +1,6 @@
 module RemoteService
   module Errors
+    class ConnectionFailedError < StandardError; end
     class RemoteCallError < StandardError
       attr_accessor :name, :message, :backtrace
 
