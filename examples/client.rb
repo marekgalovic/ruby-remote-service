@@ -1,32 +1,12 @@
-require 'logger'
-require 'benchmark'
 require "bundler/setup"
 require "remote_service"
 
 class ServiceA < RemoteService::Proxy
-  timeout 1000
-end
-
-class ServiceB < RemoteService::Proxy
   timeout 100
 end
 
 RemoteService.logger.level = Logger::DEBUG
-RemoteService.connect(brokers: ['nats://127.0.0.1:4222', 'nats://127.0.0.1:5222', 'nats://127.0.0.1:6222'])
+RemoteService.connect(brokers: ['nats://127.0.0.1:4222'])
 
-
-clients = []
-16.times do
-  clients << Thread.new do
-    loop do
-      ServiceA.all(123, keyword: 'value')
-      # ServiceB.users
-      sleep(1)
-    end
-  end
-end
-
-clients.each do |client|
-  client.join
-end
+puts ServiceA.update(123)
 
